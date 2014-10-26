@@ -1,4 +1,5 @@
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -18,17 +19,26 @@ public class Client implements Runnable {
   private static BufferedReader inputLine = null;
   private static boolean closed = false;
   
-  public static void main(String[] args) {
+  
+  public static void main(String[] args) throws FileNotFoundException {
 
     // The default port.
-    int portNumber = 2222;
+    int portNumber = 3000;
     // The default houtputStreamt.
-    String host = "localhost";
-
+    String host = args[0];
+    //byte[] myFile = new byte[1024];
+    //Server srvr = new Server();
     if (args.length < 2) {
       System.out
           .println("Usage: java MultiThreadChatClient <host> <portNumber>\n"
               + "Now using host=" + host + ", portNumber=" + portNumber);
+     /* if(Server.threads != null){
+    	  for(int i=0; i<Server.threads.length; i++){
+    		  if(Server.threads[i].clientName != null)
+    			  System.out.println(Server.threads[i].clientName);
+    		  else break;
+      	  }
+      }*/
     } else {
       host = args[0];
       portNumber = Integer.valueOf(args[1]).intValue();
@@ -42,6 +52,10 @@ public class Client implements Runnable {
       inputLine = new BufferedReader(new InputStreamReader(System.in));
       outputStream = new PrintStream(clientSocket.getOutputStream());
       inputStream = new DataInputStream(clientSocket.getInputStream());
+      /*FileOutputStream fileSocket = new FileOutputStream("s.pdf");
+      BufferedOutputStream fileWrite = new BufferedOutputStream(fileSocket);
+      int bytesRead = inputStream.read(myFile, 0, myFile.length);
+      fileWrite.write(myFile, 0, bytesRead);*/
     } catch (UnknownHostException e) {
       System.err.println("Don't know about houtputStreamt " + host);
     } catch (IOException e) {
@@ -78,7 +92,8 @@ public class Client implements Runnable {
    * 
    * @see java.lang.Runnable#run()
    */
-  public void run() {
+  @SuppressWarnings("deprecation")
+public void run() {
     /*
      * Keep on reading from the socket till we receive "Bye" from the
      * server. Once we received that then we want to break.

@@ -8,20 +8,22 @@ import java.net.ServerSocket;
  * A chat server that delivers public and private messages.
  */
 public class Server {
-
+	public static int count = 0;
   // The server socket.
   private static ServerSocket serverSocket = null;
   // The client socket.
   private static Socket clientSocket = null;
+  
 
   // This chat server can accept up to maxClientsCount clients' connections.
   private static final int maxClientsCount = 10;
-  private static final clientThread[] threads = new clientThread[maxClientsCount];
+  public static String[] CName = new String[maxClientsCount];
+  public static final clientThread[] threads = new clientThread[maxClientsCount];
 
   public static void main(String args[]) {
 
     // The default port number.
-    int portNumber = 2222;
+    int portNumber = 3000;
     if (args.length < 1) {
       System.out.println("Usage: java multiple thread chat server <portNumber>\n"
           + "Now using port number=" + portNumber);
@@ -77,12 +79,14 @@ public class Server {
  */
 class clientThread extends Thread {
 
-  private String clientName = null;
+  public String clientName = null;
   private DataInputStream is = null;
   private PrintStream os = null;
   private Socket clientSocket = null;
   private final clientThread[] threads;
   private int maxClientsCount;
+  
+  
 
   public clientThread(Socket clientSocket, clientThread[] threads) {
     this.clientSocket = clientSocket;
@@ -90,7 +94,8 @@ class clientThread extends Thread {
     maxClientsCount = threads.length;
   }
 
-  public void run() {
+  @SuppressWarnings("deprecation")
+public void run() {
     int maxClientsCount = this.maxClientsCount;
     clientThread[] threads = this.threads;
 
@@ -104,6 +109,8 @@ class clientThread extends Thread {
       while (true) {
         os.println("Enter your name.");
         name = is.readLine().trim();
+        Server.CName[Server.count]=name;
+        Server.count++;
         if (name.indexOf('@') == -1) {
           break;
         } else {
@@ -113,7 +120,13 @@ class clientThread extends Thread {
 
       /* Welcome the new the client. */
       os.println("Welcome " + name
-          + " to our chat room.\nTo leave enter /quit in a new line.");
+          + " to our chat room.\nTo leave enter /quit in a new line. To set the private message to a particular user, Use the format '@<username> <message>' ");
+      synchronized(this){
+    	 for(int i=0; i<threads.length; i++){
+    		 if(Server.CName[i] != null)
+    			 os.println(Server.CName[i]);
+      	 }
+      }
       synchronized (this) {
         for (int i = 0; i < maxClientsCount; i++) {
           if (threads[i] != null && threads[i] == this) {
@@ -133,6 +146,12 @@ class clientThread extends Thread {
         String line = is.readLine();
         if (line.startsWith("/quit")) {
           break;
+        }
+        if (line.startsWith("/file")) {
+        	line = line.trim();
+        	String[] temp = line.split(" ");
+        	this.os.println(temp[1]);
+        	//sthis.os.println("Send your file.");
         }
         /* If the message is private sent it to the given client. */
         if (line.startsWith("@")) {
