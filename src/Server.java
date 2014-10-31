@@ -14,16 +14,14 @@ public class Server {
   // The client socket.
   private static Socket clientSocket = null;
   
-
   // This chat server can accept up to maxClientsCount clients' connections.
   private static final int maxClientsCount = 10;
   public static String[] CName = new String[maxClientsCount];
   public static final clientThread[] threads = new clientThread[maxClientsCount];
 
   public static void main(String args[]) {
-
     // The default port number.
-    int portNumber = 3000;
+    int portNumber = 4000;
     if (args.length < 1) {
       System.out.println("Usage: java multiple thread chat server <portNumber>\n"
           + "Now using port number=" + portNumber);
@@ -94,11 +92,11 @@ class clientThread extends Thread {
     maxClientsCount = threads.length;
   }
 
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({ "deprecation" })
 public void run() {
     int maxClientsCount = this.maxClientsCount;
     clientThread[] threads = this.threads;
-
+    //int flag =0;
     try {
       /*
        * Create input and output streams for this client.
@@ -107,7 +105,7 @@ public void run() {
       os = new PrintStream(clientSocket.getOutputStream());
       String name;
       while (true) {
-        os.println("Enter your name.");
+        //os.println("Enter your name:");
         name = is.readLine().trim();
         Server.CName[Server.count]=name;
         Server.count++;
@@ -120,7 +118,7 @@ public void run() {
 
       /* Welcome the new the client. */
       os.println("Welcome " + name
-          + " to our chat room.\nTo leave enter /quit in a new line. To set the private message to a particular user, Use the format '@<username> <message>' ");
+          + " to the chat.\nTo leave enter /quit in a new line. \nTo set the private message to a particular user, Use the format '@<username> <message>'");
       synchronized(this){
     	 for(int i=0; i<threads.length; i++){
     		 if(Server.CName[i] != null)
@@ -136,8 +134,8 @@ public void run() {
         }
         for (int i = 0; i < maxClientsCount; i++) {
           if (threads[i] != null && threads[i] != this) {
-            threads[i].os.println("*** A new user " + name
-                + " entered the chat room !!! ***");
+            threads[i].os.println("A new user " + name
+                + " entered the chat.");
           }
         }
       }
@@ -145,13 +143,11 @@ public void run() {
       while (true) {
         String line = is.readLine();
         if (line.startsWith("/quit")) {
+          for (int i=0; i<maxClientsCount; i++){
+        	  if(this.clientName.equals(Server.CName[i]))
+        		  Server.CName[i]=null;
+          }
           break;
-        }
-        if (line.startsWith("/file")) {
-        	line = line.trim();
-        	String[] temp = line.split(" ");
-        	this.os.println(temp[1]);
-        	//sthis.os.println("Send your file.");
         }
         /* If the message is private sent it to the given client. */
         if (line.startsWith("@")) {
@@ -164,39 +160,67 @@ public void run() {
                   if (threads[i] != null && threads[i] != this
                       && threads[i].clientName != null
                       && threads[i].clientName.equals(words[0])) {
-                    threads[i].os.println("<" + name + "> " + words[1]);
+                    threads[i].os.println("[" + name + "]" + words[1]);
                     /*
                      * Echo this message to let the client know the private
                      * message was sent.
                      */
-                    this.os.println(">" + name + "> " + words[1]);
+                    this.os.println("Private message: [" + name + "]" + words[1]);
                     break;
                   }
                 }
               }
             }
           }
-        } else {
+        } else if (line.startsWith("Sending the file:")) {
+        	/* sends file to all the peers */
+        	synchronized(this){
+        		for (int i=0; i<maxClientsCount; i++) {
+        			if (threads[i] != null && threads[i].clientName != null && threads[i] == this)
+        				threads[i].os.println(line);
+        			//sleep(5000);
+        		}
+        	}
+        }
+        else if (line.startsWith("GetTheFile")){
+        	//String[] words = line.split(" ");
+        	synchronized(this){
+	        	for (int i=0; i<maxClientsCount; i++) {
+	    			if (threads[i] != null  && threads[i] != this && threads[i].clientName != null)
+	    				threads[i].os.println(line);
+	    		}
+        	}
+        }
+        else {
           /* The message is public, broadcast it to all other clients. */
           synchronized (this) {
             for (int i = 0; i < maxClientsCount; i++) {
               if (threads[i] != null && threads[i].clientName != null) {
-                threads[i].os.println("<" + name + "> " + line);
+                threads[i].os.println("[" + name + "] " + line);
               }
             }
           }
+         
         }
       }
       synchronized (this) {
+    	 int k=0;
         for (int i = 0; i < maxClientsCount; i++) {
           if (threads[i] != null && threads[i] != this
-              && threads[i].clientName != null) {
-            threads[i].os.println("*** The user " + name
-                + " is leaving the chat room !!! ***");
+              && threads[i].clientName != null){
+        	  for(int j=0; j<Server.CName.length; j++){
+        		  if(Server.CName[j] == name){
+        			  k=j;
+        			  break;
+        		  }  
+        	  }
+        	  Server.CName[k]=null;
+        	  threads[i].os.println("The user " + name
+                + " is leaving the chat!");
           }
         }
       }
-      os.println("*** Bye " + name + " ***");
+      os.println("Bye " + name + "!!");
 
       /*
        * Clean up. Set the current thread variable to null so that a new client
