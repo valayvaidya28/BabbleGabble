@@ -44,7 +44,7 @@ public class Client extends JFrame implements Runnable {
 	 // private String sourceFilePath = null;
 	  //private String destinationPath = "/home/valayism/Downloads/";
 	  JFrame frame = new JFrame("BabbleGabble");
-	  private static String host = null;
+	  private static String host = "localhost";
 	  private static String name = null;
 	  private static List archive = new List();
 	  private static List list = new List();
@@ -57,7 +57,7 @@ public class Client extends JFrame implements Runnable {
 	 */
 	
 	public Client() {
-		host = JOptionPane.showInputDialog(frame, "Server IP:", "Welcome to BabbleGabble!", JOptionPane.QUESTION_MESSAGE);
+		//host = JOptionPane.showInputDialog(frame, "Server IP:", "Welcome to BabbleGabble!", JOptionPane.QUESTION_MESSAGE);
 		name = JOptionPane.showInputDialog(frame, "Enter your name:", "Welcome to BabbleGabble!", JOptionPane.QUESTION_MESSAGE);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -250,24 +250,26 @@ public class Client extends JFrame implements Runnable {
 		    		String[] words = responseLine.split(" ");
 		    		//archive.add(words[3]);
 		    		
-		    		String temp = FileTransfer.Send(words[4]);
-		    	//	archive.add(temp);
+		    		String temp = FileTransfer.Send(words[3]);
+		    		archive.add(temp);
 		    		//temp = temp.trim();
 		    		temp = "GetTheFile " + temp;
 		    		//archive.add(temp);
 		            outputStream.println(temp);
 		    	}
-		    	else if(responseLine.contains("GetTheFile") ){
+		    	else if(responseLine.contains("GetTheFile ") ){
 		    		File dirs = new File(".");
 		    	//	String destPath = JOptionPane.showInputDialog(frame, "Enter the file path:", "Receive attachment", JOptionPane.QUESTION_MESSAGE);
 		    		String destPath = dirs.getCanonicalPath() + File.separator + "download.txt";
 		    		//destPath = destPath + File.separator + "test20.txt" ;
 		    		
 		    		//archive.add(destPath);
-		    		String[] words = responseLine.split(" ",2);
-		    		//archive.add(words[0]);
-		    		FileTransfer.Receive(destPath, words[1]);
-		    		outputStream.println("File downloading complete!");
+		    		String[] words = responseLine.split(" ",3);
+		    		archive.add(words[0]);
+		    		archive.add(words[1]);
+		    		//archive.add("File to download:" + words[2]);
+		    		FileTransfer.Receive(destPath, words[2]);
+		    		archive.add("Downloading complete.");
 		    		//outputStream.println("Downloading Done!");
 		    	}
 		    	else{

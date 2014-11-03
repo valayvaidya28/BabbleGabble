@@ -172,22 +172,22 @@ public void run() {
               }
             }
           }
-        } else if (line.startsWith("Sending the file:")) {
+        } else if (line.startsWith("Send")) {
         	/* sends file to all the peers */
         	synchronized(this){
         		for (int i=0; i<maxClientsCount; i++) {
-        			if (threads[i] != null && threads[i].clientName != null && threads[i] == this)
+        			if (threads[i] != null && threads[i].clientName != null && threads[i] == this){
         				threads[i].os.println(line);
-        			//sleep(5000);
+        			}
         		}
         	}
         }
-        else if (line.startsWith("GetTheFile")){
+        else if (line.contains("GetTheFile")){
         	//String[] words = line.split(" ");
         	synchronized(this){
 	        	for (int i=0; i<maxClientsCount; i++) {
 	    			if (threads[i] != null  && threads[i] != this && threads[i].clientName != null)
-	    				threads[i].os.println(line);
+	    				threads[i].os.println("[" + name + "]" + " " + line);
 	    		}
         	}
         }
@@ -196,7 +196,7 @@ public void run() {
           synchronized (this) {
             for (int i = 0; i < maxClientsCount; i++) {
               if (threads[i] != null && threads[i].clientName != null) {
-                threads[i].os.println("[" + name + "] " + line);
+            	  threads[i].os.println("[" + name + "] " + line);
               }
             }
           }
