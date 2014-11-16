@@ -172,36 +172,43 @@ public void run() {
               }
             }
           }
-        } else if (line.startsWith("Send")) {
+        } else if (line.startsWith("Send the file:")) {
         	/* sends file to all the peers */
         	synchronized(this){
         		for (int i=0; i<maxClientsCount; i++) {
-        			if (threads[i] != null && threads[i].clientName != null && threads[i] == this){
+        			if (threads[i] != null && threads[i].clientName != null && threads[i] == this)
         				threads[i].os.println(line);
-        			}
+        			//sleep(5000);
         		}
         	}
         }
-        else if (line.contains("GetTheFile")){
+        else if (line.startsWith("GetTheFile")){
         	//String[] words = line.split(" ");
         	synchronized(this){
 	        	for (int i=0; i<maxClientsCount; i++) {
 	    			if (threads[i] != null  && threads[i] != this && threads[i].clientName != null)
-	    				threads[i].os.println("[" + name + "]" + " " + line);
+	    				threads[i].os.println(line);
 	    		}
         	}
         }
-        else {
+        else if (line.startsWith("AudioFile")) {
+        	synchronized(this){
+        		for(int i=0; i<maxClientsCount; i++){
+        			if (threads[i] != null  && threads[i] != this && threads[i].clientName != null)
+	    				threads[i].os.println(line);
+        		}
+        	}
+        } else {
           /* The message is public, broadcast it to all other clients. */
-          synchronized (this) {
-            for (int i = 0; i < maxClientsCount; i++) {
-              if (threads[i] != null && threads[i].clientName != null) {
-            	  threads[i].os.println("[" + name + "] " + line);
-              }
-            }
-          }
-         
-        }
+	          synchronized (this) {
+	            for (int i = 0; i < maxClientsCount; i++) {
+	              if (threads[i] != null && threads[i].clientName != null) {
+	                threads[i].os.println("[" + name + "] " + line);
+	              }
+	            }
+	          }
+        	}
+        
       }
       synchronized (this) {
     	 int k=0;

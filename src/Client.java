@@ -1,4 +1,12 @@
 import java.awt.EventQueue;
+
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -12,14 +20,20 @@ import javax.swing.JOptionPane;
 import java.awt.TextArea;
 import javax.swing.Box;
 import java.awt.List;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.lang.Thread;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -28,26 +42,16 @@ import java.awt.Color;
 @SuppressWarnings("serial")
 public class Client extends JFrame implements Runnable {
 
-	private JPanel contentPane;
-	private static Socket clientSocket = null;
-	  // The output stream
+	  private JPanel contentPane;
+	  private static Socket clientSocket = null;
 	  private static PrintStream outputStream = null;
-	  // The input stream
 	  private static DataInputStream inputStream = null;
-	 // private ObjectOutputStream fileStream = null;
 	  private static BufferedReader inputLine = null;
 	  private static boolean closed = false;
-	 // private ObjectInputStream inputFileStream = null;
-	 // private FileEvent fileEvent = null;
-	 // private File dstFile = null;
-	  //private FileOutputStream fileOutputStream = null;
-	 // private String sourceFilePath = null;
-	  //private String destinationPath = "/home/valayism/Downloads/";
 	  JFrame frame = new JFrame("BabbleGabble");
-	  private static String host = "localhost";
+	  private static String host = "192.168.177.115";
 	  private static String name = null;
 	  private static List archive = new List();
-	  private static List list = new List();
 	  private static TextArea textArea = new TextArea();
 	 // static Server server = new Server();
 	  private static String attachment = null;
@@ -57,9 +61,8 @@ public class Client extends JFrame implements Runnable {
 	 */
 	
 	public Client() {
-		//host = JOptionPane.showInputDialog(frame, "Server IP:", "Welcome to BabbleGabble!", JOptionPane.QUESTION_MESSAGE);
-		name = JOptionPane.showInputDialog(frame, "Enter your name:", "Welcome to BabbleGabble!", JOptionPane.QUESTION_MESSAGE);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	//	host = JOptionPane.showInputDialog(frame, "Enter IP of the server:");
+		name = JOptionPane.showInputDialog(frame, "Enter your name:");
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -99,11 +102,6 @@ public class Client extends JFrame implements Runnable {
 		archive.setBounds(26, 10, 286, 160);
 		contentPane.add(archive);
 		
-		list.setBounds(318, 41, 120, 129);
-		list.setForeground(Color.BLACK);
-		list.setBackground(Color.WHITE);
-		contentPane.add(list);
-		
 		JButton attachButton = new JButton("Attachment");
 		attachButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -114,11 +112,70 @@ public class Client extends JFrame implements Runnable {
 		});
 		attachButton.setBounds(318, 235, 117, 25);
 		contentPane.add(attachButton);
-		//final Server server = new Server();
-		JButton refresh = new JButton("Refresh");
 		
-		refresh.setBounds(318, 10, 117, 25);
-		contentPane.add(refresh);
+		JButton sendVoice = new JButton("Send Voice");
+		sendVoice.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JOptionPane.showMessageDialog(frame, "Record your message!");
+				JavaSoundRecorder.main(null);
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+                BufferedInputStream in = null;
+				try {
+					in = new BufferedInputStream(new FileInputStream("/home/valayism/recording.wav"));
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				int read;
+                byte[] buff = new byte[1024];
+                try {
+					while ((read = in.read(buff)) > 0)
+					{
+					    out.write(buff, 0, read);
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                try {
+					out.flush();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                byte[] audioBytes = out.toByteArray();
+                archive.add("Sending the audio file.");
+                String temp = "AudioFile " + Arrays.toString(audioBytes);
+                //System.out.print(temp);
+                outputStream.println(temp);
+			}
+		});
+		sendVoice.setBounds(321, 58, 117, 25);
+		contentPane.add(sendVoice);
+		
+		JButton btnPlay = new JButton("Play");
+		btnPlay.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				/*try {
+					String temp = "vlc transmitted.wav";
+					Runtime.getRuntime().exec("/bin/bash -c "+temp);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}*/
+				String temp = "/usr/bin/vlc";
+				ProcessBuilder pb = new ProcessBuilder(temp , "transmitted.wav");
+				try {
+					pb.start();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		btnPlay.setBounds(321, 10, 117, 25);
+		contentPane.add(btnPlay);
 			
 		addWindowListener(new WindowListener(){
 			@Override
@@ -238,7 +295,7 @@ public class Client extends JFrame implements Runnable {
 	      }
 	    }
 	}
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation" })
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
@@ -247,30 +304,50 @@ public class Client extends JFrame implements Runnable {
 		      while ((responseLine = inputStream.readLine()) != null) {
 		    	if(responseLine.contains("Send the file: ")){
 		    		archive.add(responseLine);
-		    		String[] words = responseLine.split(" ");
-		    		//archive.add(words[3]);
-		    		
+		    		String[] words = responseLine.split(" ");	    		
 		    		String temp = FileTransfer.Send(words[3]);
-		    		archive.add(temp);
-		    		//temp = temp.trim();
-		    		temp = "GetTheFile " + temp;
-		    		//archive.add(temp);
+		    		temp = "GetTheFile " + temp;	    		
 		            outputStream.println(temp);
 		    	}
 		    	else if(responseLine.contains("GetTheFile ") ){
 		    		File dirs = new File(".");
-		    	//	String destPath = JOptionPane.showInputDialog(frame, "Enter the file path:", "Receive attachment", JOptionPane.QUESTION_MESSAGE);
 		    		String destPath = dirs.getCanonicalPath() + File.separator + "download.txt";
-		    		//destPath = destPath + File.separator + "test20.txt" ;
-		    		
-		    		//archive.add(destPath);
-		    		String[] words = responseLine.split(" ",3);
-		    		archive.add(words[0]);
-		    		archive.add(words[1]);
-		    		//archive.add("File to download:" + words[2]);
-		    		FileTransfer.Receive(destPath, words[2]);
+		    		String[] words = responseLine.split(" ",2);
+		    		FileTransfer.Receive(destPath, words[1]);
 		    		archive.add("Downloading complete.");
-		    		//outputStream.println("Downloading Done!");
+		    	}
+		    	else if (responseLine.startsWith("AudioFile ")){
+		    		String[] data = responseLine.split(" ",2);		    		
+		    		String[] tempData = data[1].split(", ");
+		    		System.out.println(tempData.length);
+		    		byte[] dataBytes = new byte[tempData.length];
+		    		for(int i=1; i< tempData[1].length(); i++){
+		    			dataBytes[i]=(byte) Integer.parseInt(tempData[i]);
+		    		}
+		    		tempData[0]=tempData[0].replace("[", "");
+		    		//int temp = tempData[1].length();
+		    		/*System.out.println(tempData[1].length());
+		    		System.out.println(tempData[1]);*/
+		    		tempData[(tempData.length)-1]=tempData[tempData.length-1].replace("]","");
+		    		dataBytes[0]=(byte) Integer.parseInt(tempData[0]);
+		    		dataBytes[(tempData.length)-1]=(byte) Integer.parseInt(tempData[tempData.length-1]);
+		    		ByteArrayInputStream bais = new ByteArrayInputStream(dataBytes);
+		    		File fileOut = new File("transmitted.wav");
+		    		AudioFormat audioFormat = getAudioFormat();
+		    		DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+		    		SourceDataLine sourceDataLineTemp = (SourceDataLine)AudioSystem.getLine(dataLineInfo);                                 
+		    	    sourceDataLineTemp.open(audioFormat);
+		    	    sourceDataLineTemp.start();
+		    		AudioFileFormat.Type fileType = AudioFileFormat.Type.WAVE;
+					long length = (long)(dataBytes.length / audioFormat.getFrameSize());
+					AudioInputStream audioInputStreamTemp = new AudioInputStream(bais, audioFormat, length);
+		    		if (AudioSystem.isFileTypeSupported(fileType,audioInputStreamTemp)) {
+		    	         System.out.println("Trying to write");
+		    	         AudioSystem.write(audioInputStreamTemp, fileType, fileOut);
+		    	         System.out.println("Written successfully");
+		    	    }	    		
+		    		archive.add("Audio file has arrived. Click Play to listen.");
+		    		System.out.println("Audio file arrived.");
 		    	}
 		    	else{
 		    			archive.add(responseLine);
@@ -281,6 +358,20 @@ public class Client extends JFrame implements Runnable {
 		      closed = true;
 		    } catch (IOException e) {
 		    		System.err.println("IOException:  " + e);
-		    	}
+		    	} catch (LineUnavailableException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	  	}
+	private AudioFormat getAudioFormat() {
+		// TODO Auto-generated method stub
+	        float sampleRate = 16000;
+	        int sampleSizeInBits = 8;
+	        int channels = 2;
+	        boolean signed = true;
+	        boolean bigEndian = true;
+	        AudioFormat format = new AudioFormat(sampleRate, sampleSizeInBits,
+	                                             channels, signed, bigEndian);
+	        return format;
+	}
 }
